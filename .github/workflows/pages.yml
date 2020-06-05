@@ -8,14 +8,35 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+
     - name: bom-check
       uses: arma-actions/bom-check@v1.0
       with:
         path: _conferences
+
+    - name: Copy conference data files
+      run: |
+        mkdir _tmp
+
+        for f in _conferences/*.md; do
+          name=${f#"_conferences/"}
+          name=${name%".md"}
+          cp -- "$f" "_tmp/${name}.yml"
+        done
+
+        sed -ni '/---/{:a;n;/---/b;p;ba}' _tmp/*
+
+    - name: Validate conference data files
+      uses: eliezio/action-pykwalify@v0.3
+      with:
+        files: _tmp/*.yml
+        schema: conference_schema.yml
+
     - name: Set up Ruby
       uses: actions/setup-ruby@v1
       with:
         ruby-version: '2.6'
+
     - name: Build with jekyll
       run: |
         gem install bundler
